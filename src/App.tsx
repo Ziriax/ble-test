@@ -42,23 +42,34 @@ async function connect(log: HTMLElement, canvas: HTMLCanvasElement) {
   let accPosX = 0;
   let magPosX = 0;
 
-  function print() {
+  function printState() {
     const { accX, accY, accZ, magX, magY, magZ, btnA, btnB, bear, temp } = state;
     return log.innerText = `A:(${f(accX)}, ${f(accY)}, ${f(accZ)}) M:(${f(magX)}, ${f(magY)}, ${f(magZ)}) C:${bear} T:${temp} B:(${btnA}, ${btnB})`;
   }
 
+  function writeLine(msg: string) {
+    log.innerText += msg;
+    log.innerText += "\n";
+  }
+
+  log.innerText = "";
+
   try {
+    writeLine("requesting micro:bit device...");
     const device = await microbit.requestMicrobit(window.navigator.bluetooth) ?? failure("requestMicrobit failed");
+    writeLine("getting micro:bit services...");
     const services = await microbit.getServices(device);
-    console.log(services);
+    writeLine("reading micro:bit device info...");
     const info = await services.deviceInformationService?.readDeviceInformation();
-    console.log(info);
-    services.temperatureService?.setTemperaturePeriod(200);
+    writeLine(JSON.stringify(info));
+    writeLine("setting up micro:bit temperature...");
+    await services.temperatureService?.setTemperaturePeriod(200);
     services.temperatureService?.addEventListener("temperaturechanged", e => {
       state.temp = e.detail;
-      print();
+      printState();
     });
-    services.magnetometerService?.setMagnetometerPeriod(20);
+    writeLine("setting up micro:bit magnetometer...")
+    await services.magnetometerService?.setMagnetometerPeriod(20);
     services.magnetometerService?.addEventListener("magnetometerdatachanged", e => {
       let { x, y, z } = e.detail;
       x /= 100000;
@@ -67,7 +78,7 @@ async function connect(log: HTMLElement, canvas: HTMLCanvasElement) {
       state.magX = x;
       state.magY = y;
       state.magZ = z;
-      print();
+      printState();
 
       const mag = Math.sqrt(x * x + y * y + z * z) * canvas.height / 10;
       context.fillStyle = "green";
@@ -77,15 +88,16 @@ async function connect(log: HTMLElement, canvas: HTMLCanvasElement) {
     });
     services.magnetometerService?.addEventListener("magnetometerbearingchanged", e => {
       state.bear = e.detail;
-      print();
+      printState();
     });
-    services.accelerometerService?.setAccelerometerPeriod(20);
+    writeLine("setting up micro:bit accelerometer...")
+    await services.accelerometerService?.setAccelerometerPeriod(20);
     services.accelerometerService?.addEventListener("accelerometerdatachanged", e => {
       const { x, y, z } = e.detail;
       state.accX = x;
       state.accY = y;
       state.accZ = z;
-      print();
+      printState();
 
       const mag = Math.sqrt(x * x + y * y + z * z) * canvas.height / 10;
       context.fillStyle = "red";
@@ -95,18 +107,16 @@ async function connect(log: HTMLElement, canvas: HTMLCanvasElement) {
     });
     services.buttonService?.addEventListener("buttonastatechanged", e => {
       state.btnA = e.detail;
-      print();
+      printState();
     });
     services.buttonService?.addEventListener("buttonbstatechanged", e => {
       state.btnB = e.detail;
-      print();
+      printState();
     });
-    // services.magnetometerService?.addEventListener("magnetometerdatachanged", e => {
-    //   const {x,y,z} = e.detail;
-    //   return log.innerText = `(${f(x)}, ${f(y)}, ${f(z)})`;
-    // });
-    return services;
+    writeLine("ready!")
+    return { device, services };
   } catch (err) {
+    writeLine("error!")
     alert(err.message || err);
     return null;
   }
@@ -116,28 +126,34 @@ export default function App() {
   const logRef = useRef<HTMLPreElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [services, setServices] = useState<microbit.Services | null>(null);
+  const [connection, setConnection] = useState<{ services: microbit.Services, device: BluetoothDevice } | null>(null);
+
+  const { device, services } = connection || {};
+  const magnetometerService = services?.magnetometerService;
 
   const onConnect = useCallback(() => {
     if (logRef.current && canvasRef.current) {
-      connect(logRef.current, canvasRef.current).then(setServices);
+      connect(logRef.current, canvasRef.current).then(setConnection);
     }
   }, []);
 
+  const onDisconnect = useCallback(() => {
+    device?.gatt?.disconnect();
+    setConnection(null);
+  }, [device]);
+
   const onCalibrate = useCallback(() => {
-    if (services?.magnetometerService) {
-      services?.magnetometerService?.calibrate();
-    }
-  }, [services?.magnetometerService]);
+    magnetometerService?.calibrate();
+  }, [magnetometerService]);
 
   return (
     <div className="App">
-      <button onClick={onConnect}>CONNECT</button>
-      <button onClick={onCalibrate} disabled={!services?.magnetometerService}> CALIBRATE</button>
+      <button onClick={connection ? onDisconnect : onConnect}>{connection ? "DISCONNECT" : "CONNECT"}</button>
+      <button onClick={onCalibrate} disabled={!magnetometerService}> CALIBRATE</button>
       <div>
         <pre className="Log" ref={logRef} />
       </div>
-      <canvas ref={canvasRef} width="800" height="200" />
+      <canvas ref={canvasRef} width={document.body.clientWidth} height="200" />
     </div >
   );
 }
