@@ -48,6 +48,7 @@ async function connect(log: HTMLElement, canvas: HTMLCanvasElement) {
   }
 
   function writeLine(msg: string) {
+    console.log(msg);
     log.innerText += msg;
     log.innerText += "\n";
   }
