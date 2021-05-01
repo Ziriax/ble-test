@@ -1,57 +1,20 @@
-# Getting Started with Create React App
+# Bluetooth Web Services experiment with micro:bit
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+See the `firmware` folder for Docker files and batch files to create the HEX files.
 
-## HTTPS localhost
+**For some unknown reason, only the V1 micro:bit seems to work correctly, the V2 stops working after a random time...**
+
+## Enabling HTTPS localhost
+* To run locally, you need to enable HTTPS for localhost (the web bluetooth spec says HTTPS is required, although it did seem to work without...)
 * [Download and extract the mkcert tool, Windows version](https://github.com/FiloSottile/mkcert/releases)
-  * If anti-virus software blocks it, try with the [scoop package manager](https://github.com/lukesampson/scoop)
-* Open an admin `CMD.exe`, and install a root CA using the mkcert tool (`mkcert-XXX.exe -install`)
-* `exit`
-* Open a regular `CMD.exe` (we didn't test Powershell)
-* `npm i`
+* Open a `CMD.exe` (we didn't test Powershell)
+* `cd` into the cloned source folder
+* install a root CA using the mkcert tool (`mkcert-XXX.exe -install`)
 * `mkdir .cert`
 * `cd .cert`
 * Create a localhost dev certificate, using `mkcert-XXX.exe -cert-file cert.pem -key-file key.pem localhost`
 
-## Available Scripts
+## Deployed website
 
-In the project directory, you can run:
+https://ziriax.github.io/ble-test
 
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
